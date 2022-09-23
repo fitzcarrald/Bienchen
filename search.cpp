@@ -272,7 +272,7 @@ Move_Loop:
         ext = 1;
 
       else if (depth >= 3 && leave_pv && !is_tactical && !is_check && !m.is_00()
-               && !pawn_push && !recap && m.sc() < -(depth * depth)
+               && !pawn_push && !recap && m.sc() < -depth
                && std::abs(eval) < MATT_IN_MAX) {
 
         red = depth / 3;
@@ -318,7 +318,7 @@ Move_Loop:
           for (auto x : move_lists_[ply]) {
             if (x != m && !pos_.is_tactical(x))
               hr_.add_history(
-                x.frto(), pos_.piece(x.fr()), -((depth * depth) >> 3));
+                x.frto(), pos_.piece(x.fr()), -((depth * depth) >> 4));
           }
           break;
         }
