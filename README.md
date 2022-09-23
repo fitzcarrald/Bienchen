@@ -23,10 +23,10 @@ without any changes, you will need gcc-12 or clang 14 to build
 	• tested with Arena on Linux and Windows
 	• tested with PyChess on Linux
 
-  • UCI Protokol
-  • Magic Bitboard Generator
-  • History & Killer Heuristic
-  • AlphaBetaPV Search
+  	• UCI Protokol
+  	• Magic Bitboard Generator
+  	• History & Killer Heuristic
+  	• AlphaBetaPV Search
 	• fixed size Hashtable (256 MB @all)
 	• Opening Book - none
 	• EGTB - none
