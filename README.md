@@ -39,7 +39,7 @@ without any changes, you will need gcc-12 or clang 14 to build
 	• Configuration @all
 	• EGTB ?
 
-my sources:
+my sources...
 
 	• chessprogramming.org
 	• chessprogramming.net
