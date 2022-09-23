@@ -17,7 +17,7 @@ a project for self education in modern C++
     along with this program.  If not, see <https://www.gnu.org/licenses/>.
 [![https://www.gnu.org/licenses/](https://www.gnu.org/licenses/)](https://www.gnu.org/licenses/)
 
-without any changes, you will need gcc-12 or clang 14 to build
+without any changes you will need gcc-12 or clang 14 to build
 
 	• tested with Arena on Linux and Windows
 	• tested with PyChess on Linux
