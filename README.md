@@ -16,8 +16,6 @@ Bienchen
     along with this program.  If not, see <https://www.gnu.org/licenses/>.
 [![https://www.gnu.org/licenses/](https://www.gnu.org/licenses/)](https://www.gnu.org/licenses/)
 
-Bienchen...
-
 without any changes, you will need gcc-12 or clang 14 to build
 
 	• tested with Arena on Linux and Windows
