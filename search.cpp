@@ -272,7 +272,7 @@ Move_Loop:
         ext = 1;
 
       else if (depth >= 3 && leave_pv && !is_tactical && !is_check && !m.is_00()
-               && !pawn_push && !recap && m.sc() < -depth
+               && !pawn_push && !recap && m.sc() < -(depth * depth)
                && std::abs(eval) < MATT_IN_MAX) {
 
         red = depth / 3;
