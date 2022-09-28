@@ -44,6 +44,42 @@ namespace db {
     return a < 0 ? -a : a;
   }
 
+  /// distance ///////////////////////////
+
+  static consteval R_UU make_distance() {
+
+    auto dist = [](int s1, int s2) {
+      int file_1 = s1 & 7;
+      int file_2 = s2 & 7;
+      int rank_1 = s1 >> 3;
+      int rank_2 = s2 >> 3;
+
+      return std::max(my_abs(file_1 - file_2), my_abs(rank_1 - rank_2));
+    };
+
+    R_UU r;
+    for (auto s1 : UNIVERSE)
+      for (auto s2 : UNIVERSE)
+        r[s1][s2] = dist(s1, s2);
+
+    return r;
+  }
+  static constexpr R_UU distance_ = make_distance();
+
+  /// king_def ///////////////////////////
+
+  static consteval R_U make_king_def_space() {
+
+    R_U r;
+    for (auto sq : UNIVERSE) {
+      r[sq] = K_MASK[sq];
+      for (auto s : K_MASK[sq])
+        r[sq] |= K_MASK[s];
+    }
+    return r;
+  }
+  static constexpr R_U king_def_space_ = make_king_def_space();
+
   /// between ////////////////////////////
 
   static constexpr u64 bb_between(u64 u) {
@@ -320,6 +356,12 @@ namespace db {
 
   /// get /////////////////////////////
 
+  static constexpr int distance(int s1, int s2) {
+    return distance_[s1][s2];
+  }
+  static constexpr u64 king_def_space(int sq) {
+    return king_def_space_[sq];
+  }
   static constexpr u64 between(int s1, int s2) {
     return between_[s1][s2];
   }
