@@ -152,6 +152,27 @@ namespace core {
     return sc;
   }
 
+  struct Atck {
+
+    int count_[N_CLR] = { 1, 1 };
+    int wght_[N_CLR]  = { 0, 0 };
+    u64 hit_[N_CLR]   = { 0, 0 };
+
+    void on_king(bool side, u64 u, int wght) {
+      if (!u)
+        return;
+
+      hit_[side] |= u;
+      count_[side]++;
+      wght_[side] += wght;
+    }
+    int sc(int cph) {
+      return (hit_[W_].count() * wght_[W_] * count_[W_]
+              - hit_[B_].count() * wght_[B_] * count_[B_])
+           / std::max(cph, 1);
+    }
+  };
+
   int Pos::eval() {
     if (pst_.is_material_draw())
       return 0;
