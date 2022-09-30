@@ -106,6 +106,8 @@ namespace core {
       undo_stack.rem();
   }
 
+  // used for testing only
+  // maybe hide it later behind a "test method"
   void Pos::flip() {
 
     auto flip_piece = [](int p) { return p & 1 ? p - 1 : p + 1; };
@@ -147,51 +149,6 @@ namespace core {
 
   // followed Stockfish's pawn_eval ideas - https://stockfishchess.org/
   // my params are @most a good guess
-  /*
-  template <bool S>
-  int Pos::ev_pawns() const {
-
-    static constexpr int con[] = { 0, 0, 2, 3, 5, 10, 15, 25, 0 };
-    bool bckw;
-    int sc  = 0;
-    int cph = 24 - pst_.phase();
-    int hph = cph >> 1;
-
-    int rank, rrank;
-    u64 oppo, blox, stps, leve, xlev, dubl, hood, phlx, supp;
-
-    for (auto sq : pawn(S)) {
-
-      rank  = sq >> 3;
-      rrank = S ? rank + 1 : 8 - rank;
-
-      blox = pawn(!S) & bit(S ? sq + 8 : sq - 8);
-      leve = pawn(!S) & pawn_atck<S>(sq);
-      xlev = pawn(!S) & pawn_atck<S>(S ? sq + 8 : sq - 8);
-      dubl = pawn(S) & db::forward_file(sq, S);
-      oppo = pawn(!S) & db::forward_file(sq, S);
-      stps = oppo | (pawn(!S) & db::passed(sq, S));
-      hood = pawn(S) & db::isolated(sq);
-      phlx = hood & RANK_MASK[rank];
-      supp = hood & RANK_MASK[S ? rank - 1 : rank + 1];
-      bckw = !(hood & db::forward_rank(sq, !S)) && (xlev | blox);
-
-      if (!(hood)) {
-        if (oppo && dubl && !bool(stps))
-          sc -= 4 + cph;
-        else
-          sc -= 2 + (6 + hph) * !bool(oppo);
-      } else if (phlx | supp) {
-        sc += con[rrank] * (2 + bool(phlx) - bool(oppo));
-        sc += 7 * supp.count();
-      } else if (bckw)
-        sc -= hph + (6 + hph) * !bool(oppo);
-      if (!supp)
-        sc -= (4 + cph) * bool(dubl) + bool(leve.count() > 1);
-    }
-    return sc;
-  }
-  */
   template <bool S>
   int Pos::ev_pawns() const {
 
