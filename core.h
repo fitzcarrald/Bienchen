@@ -139,6 +139,8 @@ namespace core {
     }
     void set(const std::string& fen);
 
+    void flip();
+
     bool color(int sq) const {
       return piece(sq) & 0x1;
     }

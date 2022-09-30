@@ -106,8 +106,48 @@ namespace core {
       undo_stack.rem();
   }
 
+  void Pos::flip() {
+
+    auto flip_piece = [](int p) { return p & 1 ? p - 1 : p + 1; };
+    auto flip_sq    = [](int sq) { return sq ^ 0b111000; };
+
+    // invert in place
+    for (auto sq : W_HALF) {
+
+      int tmp = piece(flip_sq(sq));
+
+      clear_sq(flip_sq(sq));
+      if (piece(sq))
+        set_sq(flip_piece(piece(sq)), flip_sq(sq));
+
+      clear_sq(sq);
+      if (tmp)
+        set_sq(flip_piece(tmp), sq);
+    }
+
+    // ep
+    if (ep())
+      state().set_ep(flip_sq(ep()));
+
+    // cr
+    int flip_cr = 0;
+    if (cr(W_OO))
+      flip_cr += B_OO;
+    if (cr(W_OOO))
+      flip_cr += B_OOO;
+    if (cr(B_OO))
+      flip_cr += W_OO;
+    if (cr(B_OOO))
+      flip_cr += W_OOO;
+    state().set_cr(flip_cr);
+
+    // stm
+    undo_stack.rem();
+  }
+
   // followed Stockfish's pawn_eval ideas - https://stockfishchess.org/
   // my params are @most a good guess
+  /*
   template <bool S>
   int Pos::ev_pawns() const {
 
@@ -151,6 +191,61 @@ namespace core {
     }
     return sc;
   }
+  */
+  template <bool S>
+  int Pos::ev_pawns() const {
+
+    static constexpr int con[] = { 0, 0, 2, 3, 5, 10, 15, 25, 0 };
+    bool bckw;
+    int sc  = 0;
+    int cph = 24 - pst_.phase();
+    int hph = cph >> 1;
+
+    int op_king = king_sq(!S);
+
+    int rank, rrank;
+    u64 oppo, blox, stps, leve, xlev, hood, phlx, supp;
+    bool pssd, dubl;
+
+    for (auto sq : pawn(S)) {
+
+      rank  = sq >> 3;
+      rrank = S ? rank + 1 : 8 - rank;
+
+      blox = pop(!S) & bit(S ? sq + 8 : sq - 8);
+      leve = pawn(!S) & pawn_atck<S>(sq);
+      xlev = pawn(!S) & pawn_atck<S>(S ? sq + 8 : sq - 8);
+      dubl = pawn(S) & db::forward_file(sq, S);
+      oppo = pawn(!S) & db::forward_file(sq, S);
+      stps = oppo | blox | (pawn(!S) & db::passed(sq, S));
+      hood = pawn(S) & db::isolated(sq);
+      phlx = hood & RANK_MASK[rank];
+      supp = hood & RANK_MASK[S ? rank - 1 : rank + 1];
+      bckw = !(hood & db::forward_rank(sq, !S)) && (xlev | blox);
+      pssd =
+        !(stps ^ leve) || ((!(stps ^ xlev) && phlx.count() >= xlev.count()));
+      pssd &= !dubl;
+
+      if (!(hood)) {
+        if (oppo && dubl && !bool(stps))
+          sc -= 4 + cph;
+        else
+          sc -= 2 + (6 + hph) * !bool(oppo);
+      } else if (phlx | supp) {
+        sc += con[rrank] * (2 + bool(phlx) - bool(oppo));
+        sc += 7 * supp.count();
+        sc += 7 - db::distance(sq, op_king);
+      } else if (bckw)
+        sc -= hph + (6 + hph) * !bool(oppo);
+      if (!supp)
+        sc -= (4 + cph) * bool(dubl) + bool(leve.count() > 1);
+      if (pssd) {
+        sc += (2 + phlx.count() + supp.count()) * con[rrank];
+        sc += db::distance(sq, op_king);
+      }
+    }
+    return sc;
+  }
 
   struct Atck {
 
@@ -166,10 +261,11 @@ namespace core {
       count_[side]++;
       wght_[side] += wght;
     }
-    int sc(int cph) {
-      return (hit_[W_].count() * wght_[W_] * count_[W_]
-              - hit_[B_].count() * wght_[B_] * count_[B_])
-           / std::max(cph, 1);
+    template <bool S>
+    int sc(int scale) {
+      return (S ? hit_[W_].count() * wght_[W_] / count_[W_]
+                : hit_[B_].count() * wght_[B_] / count_[B_])
+           * scale;
     }
   };
 
@@ -177,109 +273,75 @@ namespace core {
     if (pst_.is_material_draw())
       return 0;
 
-    u64 major_b = king(B_) | qeen(B_) | rook(B_);
-    u64 major_w = king(W_) | qeen(W_) | rook(W_);
+    // u64 major_b = king(B_) | qeen(B_) | rook(B_);
+    // u64 major_w = king(W_) | qeen(W_) | rook(W_);
 
     int sc  = pst_.mix() + ev_pawns<W_>() - ev_pawns<B_>();
     int ph  = pst_.phase();
     int qtr = ph >> 2; // [0 .. 6]
 
-    int atck_count[2] = { 1, 1 };
-    int atck_wght[2]  = { 0, 0 };
-    u64 hit_king;
-    u64 hit[2] = { 0, 0 };
+    // knight/bishop adjustment
+    // sc += (pst_.cnt(WP) + pst_.cnt(BP)) * (pst_.cnt(WN) - pst_.cnt(BN));
+    // sc += (6 - qtr) * (bool(pst_.cnt(WB) > 1) - bool(pst_.cnt(BB) > 1));
 
-    // int kngt_wght = (pst_.cnt(WP) + pst_.cnt(BP) + ph) >> 1;
-    // sc += kngt_wght * (pst_.cnt(WN) - pst_.cnt(BN));
-    // sc += (12 - ph) * (bool(pst_.cnt(WB) > 1) - bool(pst_.cnt(BB) > 1));
+    // king safety
+    auto pawn_def = [&](bool s) {
+      return u64(pawn(s) & kingspace(s)
+                 & RANK_MASK[(king_sq(s) >> 3) + (s ? 1 : -1)]);
+    };
+    auto def_aerea = [&](bool side) {
+      return db::king_def_space(king_sq(side));
+    };
 
+    int safety_w = pawn_def(W_).count();
+    int safety_b = pawn_def(B_).count();
+
+    safety_w += u64(def_aerea(W_) & pop(W_)).count();
+    safety_b += u64(def_aerea(B_) & pop(B_)).count();
+
+    /*
+    Atck atck;
     for (auto sq : kngt(W_)) {
-
       if (!(db::isolated(sq) & db::forward_rank(sq, W_) & pawn(B_)))
         sc += qtr;
       for (auto t : N_MASK[sq]) {
         sc += u64(N_MASK[t] & major_b).count() * qtr;
       }
-      hit_king = N_MASK[sq] & kingspace(B_);
-      if (hit_king != 0) {
-        hit[W_] |= hit_king;
-        atck_count[W_]++;
-        atck_wght[W_] += 4;
-      }
+      atck.on_king(W_, N_MASK[sq] & kingspace(B_), 4);
     }
     for (auto sq : kngt(B_)) {
-
       if (!(db::isolated(sq) & db::forward_rank(sq, B_) & pawn(W_)))
         sc -= qtr;
       for (auto t : N_MASK[sq]) {
         sc -= u64(N_MASK[t] & major_w).count() * qtr;
       }
-      hit_king = N_MASK[sq] & kingspace(W_);
-      if (hit_king != 0) {
-        hit[B_] |= hit_king;
-        atck_count[B_]++;
-        atck_wght[B_] += 4;
-      }
+      atck.on_king(B_, N_MASK[sq] & kingspace(W_), 4);
     }
     for (auto sq : bsop(W_)) {
-
-      hit_king = bsop_atck(sq) & kingspace(B_);
-      if (hit_king != 0) {
-        hit[W_] |= hit_king;
-        atck_count[W_]++;
-        atck_wght[W_] += 2;
-      }
       sc -= 3 * u64(db::forward_rank(sq, W_) & B_MASK[sq] & pawn(W_)).count();
+      atck.on_king(W_, bsop_atck(sq) & kingspace(B_), 2);
     }
     for (auto sq : bsop(B_)) {
-
-      hit_king = bsop_atck(sq) & kingspace(W_);
-      if (hit_king != 0) {
-        hit[B_] |= hit_king;
-        atck_count[B_]++;
-        atck_wght[B_] += 2;
-      }
       sc += 3 * u64(db::forward_rank(sq, B_) & B_MASK[sq] & pawn(B_)).count();
+      atck.on_king(B_, bsop_atck(sq) & kingspace(W_), 2);
     }
     for (auto sq : rook(W_)) {
-
-      hit_king = rook_atck(sq) & kingspace(B_);
-      if (hit_king != 0) {
-        hit[W_] |= hit_king;
-        atck_count[W_]++;
-        atck_wght[W_] += 2;
-      }
       sc -= u64(db::forward_file(sq, W_) & pawn(W_)).count() * qtr;
+      atck.on_king(W_, rook_atck(sq) & kingspace(B_), 2);
     }
     for (auto sq : rook(B_)) {
-      hit_king = rook_atck(sq) & kingspace(W_);
-      if (hit_king != 0) {
-        hit[B_] |= hit_king;
-        atck_count[B_]++;
-        atck_wght[B_] += 2;
-      }
       sc -= u64(db::forward_file(sq, B_) & pawn(B_)).count() * qtr;
+      atck.on_king(B_, rook_atck(sq) & kingspace(W_), 2);
     }
     for (auto sq : qeen(W_)) {
-      hit_king = qeen_atck(sq) & kingspace(B_);
-      if (hit_king != 0) {
-        hit[W_] |= hit_king;
-        atck_count[W_]++;
-        atck_wght[W_] += 1;
-      }
+      atck.on_king(W_, qeen_atck(sq) & kingspace(B_), 1);
     }
     for (auto sq : qeen(B_)) {
-      hit_king = qeen_atck(sq) & kingspace(W_);
-      if (hit_king != 0) {
-        hit[B_] |= hit_king;
-        atck_count[B_]++;
-        atck_wght[B_] += 1;
-      }
+      atck.on_king(B_, qeen_atck(sq) & kingspace(W_), 1);
     }
-
-    sc += (((hit[W_].count() * atck_wght[W_]) / atck_count[W_]
-            - (hit[B_].count() * atck_wght[B_]) / atck_count[B_])
-           * qtr);
+    sc += atck.sc<W_>(qtr) - atck.sc<B_>(qtr);
+    */
+    sc += safety_w - safety_b;
 
     return (side() ? sc : -sc) + 14;
   }
