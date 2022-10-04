@@ -3,14 +3,14 @@
 ##---------------------------------------------------------------------
 # -mavx2 flag isn't essential
 
-#CXX = g++
-CXX = clang++
+CXX = g++
+#CXX = clang++
 
 ifeq ($(CXX), g++)
-	CXXFLAGS = -O3 -std=c++20 -mavx2 -pedantic -Wall -Wextra -Wformat
+	CXXFLAGS = -O3 -std=c++20 -static -mavx2 -pedantic -Wall -Wextra -Wformat
 endif
 ifeq ($(CXX), clang++)
-	CXXFLAGS = -O3 -std=c++20 -mavx2 -pedantic -Wall -Wextra -Wformat -flto
+	CXXFLAGS = -O3 -std=c++20 -static -mavx2 -pedantic -Wall -Wextra -Wformat -flto
 endif
 
 LIBS = -pthread
