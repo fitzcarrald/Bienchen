@@ -32,20 +32,20 @@ namespace fen {
   static const std::string new_game  = "rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR w KQkq - 0 1";
 
   // fen-coordinate to int
-  static constexpr int stoi(const std::string& s) {
+  inline int stoi(const std::string& s) {
     if (s.size() != 2) return 0x0;
     return (rank.find(s[1]) << 3) + (file.find(s[0]) & 7);
   }
   // fen index to internal (upside-down flip)
-  static constexpr int index(const int i) {
+  inline int index(const int i) {
     return i ^ 0b111000;
   }
   // fen-piece to internal
-  static constexpr int piece(const char c) {
+  inline int piece(const char c) {
     return fen_chars.find(c);
   }
   // fen-color to internal
-  static constexpr bool stoc(const std::string& s) {
+  inline bool stoc(const std::string& s) {
     return side.find(s) & 1;
   }
   // clang-format on

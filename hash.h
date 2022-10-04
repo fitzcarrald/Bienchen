@@ -45,7 +45,7 @@ namespace hash {
 
     return r;
   }
-  static constexpr hash_piece_t make_piece_keys() {
+  static hash_piece_t make_piece_keys() {
 
     hash_piece_t r;
     for (auto sq : UNIVERSE)
@@ -55,7 +55,7 @@ namespace hash {
     return r;
   }
   static const hash_piece_t psKey = make_piece_keys();
-  static constexpr hash_move_t make_move_keys() {
+  static hash_move_t make_move_keys() {
 
     hash_move_t r;
     for (auto fr : UNIVERSE)
@@ -103,15 +103,11 @@ namespace ht {
   struct Entry {
     enum : uint8_t { UB = 1, LB = 2, XB = 3, PV = 4 };
 
-    uint64_t key_;
-    uint16_t move_;
-    int16_t score_;
-    int8_t depth_;
-    uint8_t flag_;
-
-    constexpr Entry()
-      : key_(0), move_(0), score_(SCORE_NONE), depth_(0), flag_(0) {
-    }
+    uint64_t key_   = 0;
+    uint16_t move_  = 0;
+    int16_t score_  = SCORE_NONE;
+    int8_t depth_   = 0;
+    uint8_t flag_   = 0;
   };
 
   class Table : public std::array<Entry, SIZE_A> {

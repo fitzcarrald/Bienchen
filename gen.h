@@ -120,10 +120,10 @@ namespace gen {
   class G {
 
    public:
-    constexpr G(Heuristic& h) : h_(h), moves_{ 0 }, checks_{ 0 }, proms_{ 0 } {
+    G(Heuristic& h) : h_(h), moves_{ 0 }, checks_{ 0 }, proms_{ 0 } {
     }
 
-    constexpr bool checked(Move m) const {
+    bool checked(Move m) const {
       return checks_[m.fr()] & bit(m.to());
     }
     // bool abzug(Move m) const { return abzug_[m.fr()] & bit(m.to()); }
@@ -184,7 +184,7 @@ namespace gen {
     void gen_cp_prom(MoveList& list, core::Pos& pos);
     void gen_non_tactical(MoveList& list, core::Pos& pos);
 
-    constexpr int score(int pc, int cp, int pp) {
+    int score(int pc, int cp, int pp) {
 
       assert(pc >= PAWN && pc <= KING);
       assert(cp >= EMPTY && cp <= KING);
