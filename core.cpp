@@ -233,9 +233,9 @@ namespace core {
     // u64 major_b = king(B_) | qeen(B_) | rook(B_);
     // u64 major_w = king(W_) | qeen(W_) | rook(W_);
 
-    int sc  = pst_.mix() + ev_pawns<W_>() - ev_pawns<B_>();
-    int ph  = pst_.phase();
-    int qtr = ph >> 2; // [0 .. 6]
+    int sc = pst_.mix() + ev_pawns<W_>() - ev_pawns<B_>();
+    int ph = pst_.phase();
+    // int qtr = ph >> 2; // [0 .. 6]
 
     // knight/bishop adjustment
     // sc += (pst_.cnt(WP) + pst_.cnt(BP)) * (pst_.cnt(WN) - pst_.cnt(BN));
@@ -256,48 +256,6 @@ namespace core {
     safety_w += u64(def_aerea(W_) & pop(W_)).count();
     safety_b += u64(def_aerea(B_) & pop(B_)).count();
 
-    /*
-    Atck atck;
-    for (auto sq : kngt(W_)) {
-      if (!(db::isolated(sq) & db::forward_rank(sq, W_) & pawn(B_)))
-        sc += qtr;
-      for (auto t : N_MASK[sq]) {
-        sc += u64(N_MASK[t] & major_b).count() * qtr;
-      }
-      atck.on_king(W_, N_MASK[sq] & kingspace(B_), 4);
-    }
-    for (auto sq : kngt(B_)) {
-      if (!(db::isolated(sq) & db::forward_rank(sq, B_) & pawn(W_)))
-        sc -= qtr;
-      for (auto t : N_MASK[sq]) {
-        sc -= u64(N_MASK[t] & major_w).count() * qtr;
-      }
-      atck.on_king(B_, N_MASK[sq] & kingspace(W_), 4);
-    }
-    for (auto sq : bsop(W_)) {
-      sc -= 3 * u64(db::forward_rank(sq, W_) & B_MASK[sq] & pawn(W_)).count();
-      atck.on_king(W_, bsop_atck(sq) & kingspace(B_), 2);
-    }
-    for (auto sq : bsop(B_)) {
-      sc += 3 * u64(db::forward_rank(sq, B_) & B_MASK[sq] & pawn(B_)).count();
-      atck.on_king(B_, bsop_atck(sq) & kingspace(W_), 2);
-    }
-    for (auto sq : rook(W_)) {
-      sc -= u64(db::forward_file(sq, W_) & pawn(W_)).count() * qtr;
-      atck.on_king(W_, rook_atck(sq) & kingspace(B_), 2);
-    }
-    for (auto sq : rook(B_)) {
-      sc -= u64(db::forward_file(sq, B_) & pawn(B_)).count() * qtr;
-      atck.on_king(B_, rook_atck(sq) & kingspace(W_), 2);
-    }
-    for (auto sq : qeen(W_)) {
-      atck.on_king(W_, qeen_atck(sq) & kingspace(B_), 1);
-    }
-    for (auto sq : qeen(B_)) {
-      atck.on_king(B_, qeen_atck(sq) & kingspace(W_), 1);
-    }
-    sc += atck.sc<W_>(qtr) - atck.sc<B_>(qtr);
-    */
     sc += safety_w - safety_b;
 
     return (side() ? sc : -sc) + 14;
