@@ -347,6 +347,36 @@ namespace core {
 
       return attacker;
     }
+    u64 all_atck_to(int sq) const {
+      u64 attacker = 0;
+
+      attacker |= pawns() & (db::att_by_pawn(sq, W_) | db::att_by_pawn(sq, B_));
+      attacker |= kngts() & N_MASK[sq];
+      attacker |= bsops() & db::magic_bsop(sq, magic_b(sq));
+      attacker |= rooks() & db::magic_rook(sq, magic_r(sq));
+      attacker |= kings() & K_MASK[sq];
+
+      return attacker;
+    }
+    int iatck_to(int sq) const {
+
+      auto atcks = all_atck_to(sq);
+
+      auto mino_cnt = [&](bool s) { return u64(atcks & (kngt(s) | bsop(s))).count(); };
+      auto pawn_cnt = [&](bool s) { return u64(atcks & pawn(s)).count(); };
+      auto rook_cnt = [&](bool s) { return u64(atcks & rook(s)).count(); };
+      auto qeen_cnt = [&](bool s) { return u64(atcks & qeen(s)).count(); };
+      auto king_cnt = [&](bool s) { return u64(atcks & king(s)).count(); };
+
+      int r = 135 * (pawn_cnt(W_) - pawn_cnt(B_))
+            +  45 * (mino_cnt(W_) - mino_cnt(B_))
+            +  27 * (rook_cnt(W_) - rook_cnt(B_))
+            +  15 * (qeen_cnt(W_) - qeen_cnt(B_))
+            +   1 * (king_cnt(W_) - king_cnt(B_));
+
+      return r  ? (r > 0 ? 1 : -1)
+                : 0;
+    }
     bool batck_to(int sq, int side) const {
       if ((pawn(side)) & db::att_by_pawn(sq, side))
         return true;
@@ -561,7 +591,14 @@ namespace core {
 
     template <bool S>
     int ev_pawns() const;
-
+    template <bool S>
+    int ev_kngts(u64 kingspace);
+    template <bool S>
+    int ev_bsops(u64 kingspace);
+    template <bool S>
+    int ev_rooks(u64 kingspace);
+    template <bool S>
+    int ev_qeens(u64 kingspace);
     int eval();
 
     bool is_draw() const {
