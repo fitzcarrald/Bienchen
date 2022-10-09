@@ -234,7 +234,7 @@ namespace core {
     // u64 major_w = king(W_) | qeen(W_) | rook(W_);
 
     int sc = pst_.mix() + ev_pawns<W_>() - ev_pawns<B_>();
-    int ph = pst_.phase();
+    // int ph = pst_.phase();
     // int qtr = ph >> 2; // [0 .. 6]
 
     // knight/bishop adjustment
