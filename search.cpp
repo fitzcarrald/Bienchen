@@ -242,23 +242,18 @@ Move_Loop:
     PV npv;
 
     bool is_tactical = pos_.is_tactical(m);
-    // int see          = is_tactical ? pos_.see(m) : -1;
-    // bool recap       = !is_root && is_recap(m) && see >= 0;
-    bool recap     = !is_root && is_recap(m);
-    bool pawn_push = pos_.is_pawn_push(m);
+    bool recap       = !is_root && is_recap(m);
+    bool pawn_push   = pos_.is_pawn_push(m);
+    int capture      = pos_.piece(m.to());
 
     if (!pos_.do_move(m))
       continue;
 
     move_line_.push_back(m);
-    cp_line_.push_back(pos_.piece(m.to()));
+    cp_line_.push_back(capture);
 
     move_cnt++;
     hr_.push();
-
-    //
-    bool see = is_tactical ? -quiesce(0, -alpha - 1, -alpha) > alpha : false;
-    recap    = recap && see;
 
     int ext = 0;
     int red = 0;
@@ -267,6 +262,9 @@ Move_Loop:
       move_cnt > 1 + 2 * is_root + 2 * bool(is_pv && std::abs(best_score) < 2);
 
     if (!is_root && cur_depth_ >= 6) {
+
+      recap &= is_tactical ? -quiesce(0, -alpha - 1, -alpha) > alpha : false;
+
       if ((is_pv && (is_check || recap || pawn_push))
           || (depth <= 4 && (is_check || recap)))
         ext = 1;
