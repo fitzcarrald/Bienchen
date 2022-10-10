@@ -316,7 +316,7 @@ Move_Loop:
           for (auto x : move_lists_[ply]) {
             if (x != m && !pos_.is_tactical(x))
               hr_.add_history(
-                x.frto(), pos_.piece(x.fr()), -(depth * depth) >> 3);
+                x.frto(), pos_.piece(x.fr()), -((depth * depth) >> 3));
           }
           break;
         }
