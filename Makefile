@@ -3,8 +3,8 @@
 ##---------------------------------------------------------------------
 # -mavx2 flag isn't essential
 
-CXX = g++
-#CXX = clang++
+#CXX = g++
+CXX = clang++
 
 ifeq ($(CXX), g++)
 	CXXFLAGS = -O3 -std=c++20 -static -mavx2 -pedantic -Wall -Wextra -Wformat
