@@ -3,8 +3,8 @@
 ##---------------------------------------------------------------------
 # -mavx2 flag isn't essential
 
-#CXX = g++
-CXX = clang++
+CXX = g++
+#CXX = clang++
 
 ifeq ($(CXX), g++)
 	CXXFLAGS = -O3 -std=c++20 -static -mavx2 -pedantic -Wall -Wextra -Wformat
@@ -19,7 +19,7 @@ LIBS = -pthread
 ## SOURCES
 ##---------------------------------------------------------------------
 
-EXE = bienchen
+EXE = bienchen_at_high_con_tempo5
 SOURCES = timer.cpp move.cpp core.cpp gen.cpp search.cpp uci.cpp main.cpp
 OBJS = $(addsuffix .o, $(basename $(notdir $(SOURCES))))
 UNAME_S := $(shell uname -s)

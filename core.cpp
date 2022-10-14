@@ -153,6 +153,7 @@ namespace core {
   int Pos::ev_pawns() const {
 
     static constexpr int con[] = { 0, 0, 2, 3, 5, 10, 15, 25, 0 };
+    // static constexpr int con[] = { 0, 0, 2, 3, 5, 11, 18, 30, 0 };
     bool bckw;
     int sc  = 0;
     int cph = 24 - pst_.phase();
@@ -200,6 +201,10 @@ namespace core {
         sc += (2 + phlx.count() + supp.count()) * con[rrank];
         sc += db::distance(sq, op_king);
       }
+      // at = pawn_atck<S>(sq);
+      // sc += (u64(at & minor<!S>()).count() << 2)
+      //     + (u64(at & rook(!S)).count() << 3)
+      //     + (u64(at & qeen(!S)).count() << 4);
     }
     return sc;
   }
@@ -225,29 +230,97 @@ namespace core {
            * scale;
     }
   };
+  // clang-format off
+  template <bool S>
+  int Pos::ev_kngts(u64 ks) {
 
+    int sc = 0;
+    for (auto sq : kngt(S)) {
+      u64 at = N_MASK[sq];
+      sc += (u64(at & CENTER4).count())
+          + (u64(at & CENTER16).count() << 1)
+          + (u64(at & ks).count() << 2)
+          + (u64(at & minor<!S>()).count() << 2)
+          + (u64(at & rook(!S)).count() << 3)
+          + (u64(at & qeen(!S)).count() << 5);
+    }
+    return sc;
+  }
+  template <bool S>
+  int Pos::ev_bsops(u64 ks) {
+
+    int sc = 0;
+    for (auto sq : bsop(S)) {
+      u64 at = bsop_atck(sq);
+      sc += (u64(at & CENTER4).count())
+          + (u64(at & CENTER16).count() << 1)
+          + (u64(at & ks).count() << 2)
+          + (u64(at & minor<!S>()).count() << 2)
+          + (u64(at & rook(!S)).count() << 3)
+          + (u64(at & qeen(!S)).count() << 5);
+    }
+    return sc;
+  }
+  template <bool S>
+  int Pos::ev_rooks(u64 ks) {
+
+    int sc = 0;
+    for (auto sq : rook(S)) {
+      u64 at = rook_atck(sq);
+      sc += (u64(at & CENTER4).count())
+          + (u64(at & CENTER16).count() << 1)
+          + (u64(at & ks).count() << 1)
+          + (u64(at & minor<!S>()).count() << 1)
+          //+ (u64(at & rook(!S)).count() << 2)
+          + (u64(at & qeen(!S)).count() << 4);
+    }
+    return sc;
+  }
+  template <bool S>
+  int Pos::ev_qeens(u64 ks) {
+
+    int sc = 0;
+    for (auto sq : qeen(S)) {
+      u64 at = qeen_atck(sq);
+      sc += (u64(at & CENTER4).count())
+          + (u64(at & CENTER16).count() << 1)
+          + (u64(at & ks).count())
+          + (u64(at & minor<!S>()).count())
+          + (u64(at & rook(!S)).count() << 1);
+          //+ (u64(at & qeen(!S)).count() << 3);
+    }
+    return sc;
+  }
+  // clang-format on
   int Pos::eval() {
     if (pst_.is_material_draw())
       return 0;
 
     // u64 major_b = king(B_) | qeen(B_) | rook(B_);
     // u64 major_w = king(W_) | qeen(W_) | rook(W_);
-
-    int sc = pst_.mix() + ev_pawns<W_>() - ev_pawns<B_>();
-    // int ph = pst_.phase();
+    // int ph  = pst_.phase();
     // int qtr = ph >> 2; // [0 .. 6]
+
+    u64 ks[N_CLR] = { kingspace(B_), kingspace(W_) };
+    // clang-format off
+    int sc = pst_.mix()
+          + ev_pawns<W_>() - ev_pawns<B_>()
+          + (ev_kngts<W_>(ks[B_]) - ev_kngts<B_>(ks[W_])
+           + ev_bsops<W_>(ks[B_]) - ev_bsops<B_>(ks[W_])
+           + ev_rooks<W_>(ks[B_]) - ev_rooks<B_>(ks[W_])
+           + ev_qeens<W_>(ks[B_]) - ev_qeens<B_>(ks[W_])) / 4;
+    // clang-format on
 
     // knight/bishop adjustment
     // sc += (pst_.cnt(WP) + pst_.cnt(BP)) * (pst_.cnt(WN) - pst_.cnt(BN));
     // sc += (6 - qtr) * (bool(pst_.cnt(WB) > 1) - bool(pst_.cnt(BB) > 1));
-
     // king safety
     auto pawn_def = [&](bool s) {
       return u64(pawn(s) & kingspace(s)
                  & RANK_MASK[(king_sq(s) >> 3) + (s ? 1 : -1)]);
     };
     auto def_aerea = [&](bool side) {
-      return db::king_def_space(king_sq(side));
+      return db::king_def_space(king_sq(side)) & ~PROM;
     };
 
     int safety_w = pawn_def(W_).count();

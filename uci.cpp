@@ -22,8 +22,8 @@
 #include "search.h"
 
 #include <fstream>
-#include <sstream>
 #include <iostream>
+#include <sstream>
 #include <thread>
 
 namespace uci {

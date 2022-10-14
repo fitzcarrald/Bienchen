@@ -255,6 +255,10 @@ Move_Loop:
     move_cnt++;
     hr_.push();
 
+    //
+    // bool see = is_tactical ? -quiesce(0, -alpha - 1, -alpha) > alpha : false;
+    // recap    = recap && see;
+
     int ext = 0;
     int red = 0;
 
@@ -270,7 +274,7 @@ Move_Loop:
         ext = 1;
 
       else if (depth >= 3 && leave_pv && !is_tactical && !is_check && !m.is_00()
-               && !pawn_push && !recap && m.sc() < -depth
+               && !pawn_push && !recap && m.sc() < -(depth * depth)
                && std::abs(eval) < MATT_IN_MAX) {
 
         red = depth / 3;
@@ -316,7 +320,7 @@ Move_Loop:
           for (auto x : move_lists_[ply]) {
             if (x != m && !pos_.is_tactical(x))
               hr_.add_history(
-                x.frto(), pos_.piece(x.fr()), -((depth * depth) >> 3));
+                x.frto(), pos_.piece(x.fr()), -((depth * depth) >> 2));
           }
           break;
         }
@@ -352,7 +356,7 @@ Move Search::run() {
 
   init();
 
-  int base_time = pos_.ply() > 12 ? time_ : time_ / 2;
+  int base_time = time_;
   int score     = -MATT;
   int alpha     = -MATT;
   int beta      = MATT;
