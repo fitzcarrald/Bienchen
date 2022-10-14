@@ -19,7 +19,7 @@ LIBS = -pthread
 ## SOURCES
 ##---------------------------------------------------------------------
 
-EXE = bienchen_at_high_con_tempo5
+EXE = bienchen-dev
 SOURCES = timer.cpp move.cpp core.cpp gen.cpp search.cpp uci.cpp main.cpp
 OBJS = $(addsuffix .o, $(basename $(notdir $(SOURCES))))
 UNAME_S := $(shell uname -s)
